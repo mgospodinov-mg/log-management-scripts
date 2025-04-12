@@ -2,13 +2,23 @@
 
 ##################################################################################################
 #Title: pod_logs.sh                                                                              #
-#Description: This script is designed to gather all logs, detailed pod information, and events   #
-#             within a specified namespace.                                                      #
+#Description: This script is designed to gather all pod logs, detailed pod information, and      #
+#             events within a specified namespace.                                               #                                                                #
 #                                                                                                #
 #Usage: pod_logs.sh <namespace>                                                                  #
 #Version: 0.1                                                                                    #
 ##################################################################################################
 
+#Check if kubectl/oc command exists
+if command -v kubectl &> /dev/null; then
+    cmd="kubectl"
+elif command -v oc &> /dev/null; then
+    cmd="oc"
+else
+    echo "Neither kubectl or oc is installed !"
+    exit 1
+fi
+  
 namespace=$1
 logdir_name="pod_logs_${namespace}_$(date +%d-%m-%Y_%H%M%S)"
 logdir="/tmp/${logdir_name}"
@@ -45,21 +55,21 @@ if [ $? -ne 0 ]; then
 fi
 
 #Collect all logs pod and describe
-kubectl -n ${namespace} get po --no-headers | while read -r line; do
+$cmd -n ${namespace} get po --no-headers | while read -r line; do
     podname=$(echo "$line" | awk '{print $1}')
-    kubectl -n "$namespace" describe pod "$podname" > "${logdir}/${podname}.describe"
-    for container in $(kubectl get pod -n "$namespace" "$podname" -o jsonpath="{.spec.containers[*].name}"); do
+    ${cmd} -n "$namespace" describe pod "$podname" > "${logdir}/${podname}.describe"
+    for container in $($cmd get pod -n "$namespace" "$podname" -o jsonpath="{.spec.containers[*].name}"); do
         fname_log="${logdir}/${podname}.${container}.log"
         echo "$fname_log"
-        kubectl -n "$namespace" logs "$podname" "$container" > "$fname_log"
+        $cmd -n "$namespace" logs "$podname" "$container" > "$fname_log"
         fname_previous_log="${logdir}/${podname}.${container}.previous.log"
         echo "$fname_previous_log"
-        kubectl -n "$namespace" logs -p "$podname" "$container" > "$fname_previous_log" 2> /dev/null
+        $cmd -n "$namespace" logs -p "$podname" "$container" > "$fname_previous_log" 2> /dev/null
     done
 done 
 
 #Collect all events
-kubectl -n "$namespace" get events > "${logdir}/events.log"
+$cmd -n "$namespace" get events > "${logdir}/events.log"
 echo "${logdir}/events.log"
 
 #Create tarball archive
