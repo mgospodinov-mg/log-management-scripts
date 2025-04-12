@@ -57,7 +57,7 @@ fi
 #Collect all logs pod and describe
 $cmd -n ${namespace} get po --no-headers | while read -r line; do
     podname=$(echo "$line" | awk '{print $1}')
-    ${cmd} -n "$namespace" describe pod "$podname" > "${logdir}/${podname}.describe"
+    $cmd -n "$namespace" describe pod "$podname" > "${logdir}/${podname}.describe"
     for container in $($cmd get pod -n "$namespace" "$podname" -o jsonpath="{.spec.containers[*].name}"); do
         fname_log="${logdir}/${podname}.${container}.log"
         echo "$fname_log"
