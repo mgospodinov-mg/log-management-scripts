@@ -63,7 +63,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-#Collect all logs pod and describe
+#Collect logs
 $cmd -n ${namespace} get po --no-headers --field-selector=status.phase==Running | grep neo4j | while read -r line; do
      podname=$(echo "$line" | awk '{print $1}')
      mkdir "${logdir}/${podname}"
